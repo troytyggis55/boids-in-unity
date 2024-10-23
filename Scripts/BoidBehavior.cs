@@ -1,12 +1,20 @@
 using System.Collections.Generic;
+using System.Numerics;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
+using Vector3 = UnityEngine.Vector3;
 
 public class BoidBehavior : MonoBehaviour
 {
-    public static readonly List<BoidBehavior> AllBoids = new List<BoidBehavior>();
+    private static readonly List<BoidBehavior> AllBoids = new List<BoidBehavior>();
+    
+    public float cohesionWeight = 1.0f;
+    public float separationWeight = 1.0f;
+    public float alignmentWeight = 1.0f;
+    
     public float senseRadius = 3.0f;
     public float speed = 1.0f;
-    public float turnSpeed = 1.0f;
+    public float collisionWeight = 1.0f;
     
     public int rayAmount = 20;
     public float rayStart = 0.5f;
@@ -26,21 +34,73 @@ public class BoidBehavior : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        List<BoidBehavior> detectedBoids = new List<BoidBehavior>();
+        
         foreach (BoidBehavior boid in AllBoids)
         {
             float distance = Vector3.Distance(transform.position, boid.transform.position);
             if (distance < senseRadius)
             {
-                Debug.DrawLine(transform.position, boid.transform.position, Color.red);
+                detectedBoids.Add(boid);
             }
         }
         
+        Cohesion(detectedBoids);
+        Separation(detectedBoids);
+        Alignment(detectedBoids);
+        
         RandomMovement();
         transform.position += transform.forward * (speed * Time.deltaTime);
-        DetectEnvironmentArray();
+        DetectEnvironment();
     }
     
+    // TODO optimize average position calculation to avoid making redundant calculations
+    void Cohesion(List<BoidBehavior> detectedBoids)
+    {
+        if (detectedBoids.Count == 0) return;
+        
+        Vector3 averagePosition = Vector3.zero;
+        foreach (BoidBehavior boid in detectedBoids) averagePosition += boid.transform.position;
+        
+        averagePosition /= detectedBoids.Count;
+        
+        Vector3 averagePositionVector = averagePosition - transform.position;
+        transform.forward = Vector3.Lerp(transform.forward, averagePositionVector, cohesionWeight * Time.deltaTime);
+        //Debug.DrawRay(transform.position, direction, Color.blue);
+    }
     
+    void Separation(List<BoidBehavior> detectedBoids)
+    {
+        if (detectedBoids.Count == 0) return;
+        
+        Vector3 separationVector = Vector3.zero;
+        foreach (BoidBehavior boid in detectedBoids)
+        {
+            Vector3 direction = transform.position - boid.transform.position;
+            float magnitude = (senseRadius - direction.magnitude) / senseRadius;
+            
+            separationVector += direction.normalized * magnitude; 
+            //Debug.DrawRay(transform.position, direction, Color.black);
+        }
+        
+        separationVector /= detectedBoids.Count;
+        
+        transform.forward = Vector3.Lerp(transform.forward, separationVector, separationWeight * Time.deltaTime);
+        //Debug.DrawRay(transform.position, separationVector, Color.yellow);
+    }
+    
+    void Alignment(List<BoidBehavior> detectedBoids)
+    {
+        if (detectedBoids.Count == 0) return;
+        
+        Vector3 averageDirection = Vector3.zero;
+        foreach (BoidBehavior boid in detectedBoids) averageDirection += boid.transform.forward;
+        
+        averageDirection /= detectedBoids.Count;
+        
+        transform.forward = Vector3.Lerp(transform.forward, averageDirection, alignmentWeight * Time.deltaTime);
+        Debug.DrawRay(transform.position, averageDirection, Color.green);
+    }
     
     void RandomMovement()
     {
@@ -48,9 +108,8 @@ public class BoidBehavior : MonoBehaviour
             .deltaTime);
     }
     
-    void DetectEnvironmentArray()
+    void DetectEnvironment()
     {
-        RaycastHit hit;
         Vector3[] directions = DefineRays(rayAmount, rayStart, transform.forward);
 
         bool hitDetected = false;
@@ -58,7 +117,7 @@ public class BoidBehavior : MonoBehaviour
 
         foreach (var direction in directions)
         {
-            if (Physics.Raycast(transform.position, direction, out hit, senseRadius))
+            if (Physics.Raycast(transform.position, direction, out var hit, senseRadius))
             {
                 // Debug.DrawRay(transform.position, direction * hit.distance, Color.red);
                 // Debug.DrawRay(hit.point, hit.normal, Color.blue);
@@ -76,7 +135,8 @@ public class BoidBehavior : MonoBehaviour
 
         if (hitDetected)
         {
-            transform.forward += avoidVector * (turnSpeed * Time.deltaTime);
+            //transform.forward += avoidVector * (collisionWeight * Time.deltaTime);
+            transform.forward = Vector3.Lerp(transform.forward, avoidVector, collisionWeight * Time.deltaTime);
         }
     }
     

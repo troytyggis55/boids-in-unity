@@ -10,15 +10,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: a3ff0f378b1e4564b8eb2ee21bed2ba0, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.1
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a3ff0f378b1e4564b8eb2ee21bed2ba0, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.1
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a3ff0f378b1e4564b8eb2ee21bed2ba0, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.1
+      value: 0.05
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a3ff0f378b1e4564b8eb2ee21bed2ba0, type: 3}
       propertyPath: m_LocalPosition.x
@@ -60,6 +60,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: a3ff0f378b1e4564b8eb2ee21bed2ba0, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: -7511558181221131132, guid: a3ff0f378b1e4564b8eb2ee21bed2ba0, type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
@@ -93,9 +97,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c2c831cfc1406b46b23cc6c318e66ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  senseRadius: 10
+  cohesionWeight: 2
+  separationWeight: 4
+  alignmentWeight: 1
+  senseRadius: 1
   speed: 1
-  turnSpeed: 5
+  collisionWeight: 1
   rayAmount: 20
   rayStart: 0.5
-  randomMovement: 0.1
+  randomMovement: 1
