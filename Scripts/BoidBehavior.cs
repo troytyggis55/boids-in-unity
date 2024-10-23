@@ -3,32 +3,50 @@ using UnityEngine;
 
 public class BoidBehavior : MonoBehaviour
 {
-    public static List<BoidBehavior> allBoids = new List<BoidBehavior>();
+    public static readonly List<BoidBehavior> AllBoids = new List<BoidBehavior>();
     public float senseRadius = 3.0f;
     public float speed = 1.0f;
     public float turnSpeed = 1.0f;
-
+    
     public int rayAmount = 20;
     public float rayStart = 0.5f;
 
+    public float randomMovement = 0.1f;
+    
     void Awake()
     {
-        allBoids.Add(this);
+        AllBoids.Add(this);
     }
     
     void OnDestroy()
     {
-        allBoids.Remove(this);
+        AllBoids.Remove(this);
     }
 
     // Update is called once per frame
     void Update()
     {
+        foreach (BoidBehavior boid in AllBoids)
+        {
+            float distance = Vector3.Distance(transform.position, boid.transform.position);
+            if (distance < senseRadius)
+            {
+                Debug.DrawLine(transform.position, boid.transform.position, Color.red);
+            }
+        }
+        
+        RandomMovement();
         transform.position += transform.forward * (speed * Time.deltaTime);
         DetectEnvironmentArray();
     }
     
-
+    
+    
+    void RandomMovement()
+    {
+        transform.forward = Vector3.Lerp(transform.forward, Random.insideUnitSphere, randomMovement * Time
+            .deltaTime);
+    }
     
     void DetectEnvironmentArray()
     {
@@ -42,18 +60,18 @@ public class BoidBehavior : MonoBehaviour
         {
             if (Physics.Raycast(transform.position, direction, out hit, senseRadius))
             {
-                Debug.DrawRay(transform.position, direction * hit.distance, Color.red);
-                Debug.DrawRay(hit.point, hit.normal, Color.blue);
+                // Debug.DrawRay(transform.position, direction * hit.distance, Color.red);
+                // Debug.DrawRay(hit.point, hit.normal, Color.blue);
             
                 float magnitude = (senseRadius - hit.distance) / senseRadius;
 
                 avoidVector += hit.normal * magnitude;
                 hitDetected = true;
-            }
+            }/*
             else
             {
                 Debug.DrawRay(transform.position, direction * senseRadius, Color.green);
-            }
+            }*/
         }
 
         if (hitDetected)
