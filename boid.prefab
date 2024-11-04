@@ -98,7 +98,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cohesionWeight: 2
-  separationWeight: 4
+  separationWeight: 6
   alignmentWeight: 1
   senseRadius: 1
   speed: 1

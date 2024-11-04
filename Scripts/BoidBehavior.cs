@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Numerics;
 using UnityEngine;
-using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
 public class BoidBehavior : MonoBehaviour
@@ -21,9 +19,12 @@ public class BoidBehavior : MonoBehaviour
 
     public float randomMovement = 0.1f;
     
+    private Vector3[] _initialRayDirections;
+    
     void Awake()
     {
         AllBoids.Add(this);
+        _initialRayDirections = DefineRays(rayAmount, rayStart);
     }
     
     void OnDestroy()
@@ -99,7 +100,7 @@ public class BoidBehavior : MonoBehaviour
         averageDirection /= detectedBoids.Count;
         
         transform.forward = Vector3.Lerp(transform.forward, averageDirection, alignmentWeight * Time.deltaTime);
-        Debug.DrawRay(transform.position, averageDirection, Color.green);
+        //Debug.DrawRay(transform.position, averageDirection, Color.green);
     }
     
     void RandomMovement()
@@ -110,27 +111,26 @@ public class BoidBehavior : MonoBehaviour
     
     void DetectEnvironment()
     {
-        Vector3[] directions = DefineRays(rayAmount, rayStart, transform.forward);
-
         bool hitDetected = false;
         Vector3 avoidVector = Vector3.zero;
 
-        foreach (var direction in directions)
+        foreach (var direction in _initialRayDirections)
         {
-            if (Physics.Raycast(transform.position, direction, out var hit, senseRadius))
+            Vector3 transformedDirection = transform.rotation * direction;
+            if (Physics.Raycast(transform.position, transformedDirection, out var hit, senseRadius))
             {
-                // Debug.DrawRay(transform.position, direction * hit.distance, Color.red);
-                // Debug.DrawRay(hit.point, hit.normal, Color.blue);
-            
+                Debug.DrawRay(transform.position, transformedDirection * hit.distance, Color.red);
+                Debug.DrawRay(hit.point, hit.normal, Color.blue);
+
                 float magnitude = (senseRadius - hit.distance) / senseRadius;
 
                 avoidVector += hit.normal * magnitude;
                 hitDetected = true;
-            }/*
+            }
             else
             {
-                Debug.DrawRay(transform.position, direction * senseRadius, Color.green);
-            }*/
+                Debug.DrawRay(transform.position, transformedDirection * senseRadius, Color.green);
+            }
         }
 
         if (hitDetected)
@@ -141,26 +141,26 @@ public class BoidBehavior : MonoBehaviour
     }
     
     
-    Vector3[] DefineRays(int rays, float angle, Vector3 forward)
+    Vector3[] DefineRays(int rays, float angle)
     {
-        float phi = (1 + Mathf.Sqrt(5)) / 2; 
+        float phi = (1 + Mathf.Sqrt(5)) / 2;
 
         int iEnd = (int)(rays / angle);
         int iStart = (int)(iEnd * (1 - angle));
-        
+
         Vector3[] rayDirections = new Vector3[iEnd - iStart];
-        
+
         for (int i = iStart; i < iEnd; i++)
         {
             float theta = 2 * Mathf.PI * i / phi;
-            
+
             float z = 1 - (2.0f * i) / (iEnd - 1);
             float radius = Mathf.Sqrt(1 - z * z);
 
             float x = radius * Mathf.Cos(theta);
             float y = radius * Mathf.Sin(theta);
 
-            rayDirections[i - iStart] = Quaternion.LookRotation(forward) * new Vector3(x, y, -z);
+            rayDirections[i - iStart] = new Vector3(x, y, -z);
         }
 
         return rayDirections;
