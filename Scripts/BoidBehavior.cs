@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 public class BoidBehavior : MonoBehaviour
@@ -10,13 +12,17 @@ public class BoidBehavior : MonoBehaviour
     public float separationWeight = 1.0f;
     public float alignmentWeight = 1.0f;
     
-    public float senseRadius = 3.0f;
+    public float senseRadius = 1.0f;
+        
     public float speed = 1.0f;
+    public float reflectBySpeedPercentage = 0.05f;
     public float collisionWeight = 1.0f;
     
     public int rayAmount = 20;
     public float rayStart = 0.5f;
 
+    private readonly int[] _gridPosition = new int[]{0, 0, 0};
+    
     public float randomMovement = 0.1f;
     
     private Vector3[] _initialRayDirections;
@@ -25,9 +31,11 @@ public class BoidBehavior : MonoBehaviour
     
     void Awake()
     {
+        
         AllBoids.Add(this);
         _initialRayDirections = DefineRays(rayAmount, rayStart);
         _transform = transform;
+        UpdateCubeGridPosition();
         _detectedBoids = new List<BoidBehavior>();
     }
     
@@ -43,9 +51,27 @@ public class BoidBehavior : MonoBehaviour
         
         foreach (BoidBehavior boid in AllBoids)
         {
+            if (boid == this) continue;
+
+            // Check only neighboring boids
+            if (_gridPosition[0] - 1 > boid._gridPosition[0] || _gridPosition[0] + 1 < boid._gridPosition[0]) continue;
+            if (_gridPosition[1] - 1 > boid._gridPosition[1] || _gridPosition[1] + 1 < boid._gridPosition[1]) continue;
+            if (_gridPosition[2] - 1 > boid._gridPosition[2] || _gridPosition[2] + 1 < boid._gridPosition[2]) continue;
+
+            //if (AllBoids[0].Equals(this))
+            //{
+            //    Debug.DrawRay(_transform.position, boid._transform.position - _transform.position, Color.red);
+            //}
+            
             float distance = Vector3.Distance(_transform.position, boid._transform.position);
             if (distance < senseRadius)
             {
+                //if (AllBoids[0].Equals(this))
+                //{
+                //    Debug.DrawRay(_transform.position,
+                //        boid._transform.position - _transform.position, Color.green);
+                //}
+
                 _detectedBoids.Add(boid);
             }
         }
@@ -55,11 +81,13 @@ public class BoidBehavior : MonoBehaviour
         Alignment(_detectedBoids);
         
         RandomMovement();
-        _transform.position += _transform.forward * (speed * Time.deltaTime);
         DetectEnvironment();
+        _transform.position += _transform.forward * (speed * Time.deltaTime);
+        UpdateCubeGridPosition();
+        
+        //Debug.DrawRay(_transform.position, _transform.forward, Color.blue);
     }
-    
-    // TODO optimize average position calculation to avoid making redundant calculations
+
     void Cohesion(List<BoidBehavior> detectedBoids)
     {
         if (detectedBoids.Count == 0) return;
@@ -101,7 +129,7 @@ public class BoidBehavior : MonoBehaviour
         Vector3 averageDirection = Vector3.zero;
         foreach (BoidBehavior boid in detectedBoids) averageDirection += boid._transform.forward;
         
-        averageDirection /= detectedBoids.Count;
+        averageDirection.Normalize();
         
         _transform.forward = Vector3.Lerp(_transform.forward, averageDirection, alignmentWeight * Time.deltaTime);
         //Debug.DrawRay(_transform.position, averageDirection, Color.green);
@@ -117,7 +145,7 @@ public class BoidBehavior : MonoBehaviour
     {
         bool hitDetected = false;
         Vector3 avoidVector = Vector3.zero;
-
+        
         foreach (var direction in _initialRayDirections)
         {
             Vector3 transformedDirection = _transform.rotation * direction;
@@ -125,6 +153,13 @@ public class BoidBehavior : MonoBehaviour
             {
                 //Debug.DrawRay(_transfor.position, transformedDirection * hit.distance, Color.red);
                 //Debug.DrawRay(hit.point, hit.normal, Color.blue);
+                
+                if (hit.distance < reflectBySpeedPercentage * speed)
+                {
+                    _transform.forward = Vector3.Reflect(_transform.forward, hit.normal);
+                    continue;
+                }
+                
 
                 float magnitude = (senseRadius - hit.distance) / senseRadius;
 
@@ -133,7 +168,7 @@ public class BoidBehavior : MonoBehaviour
             }
             else
             {
-                //Debug.DrawRay(_transfor.position, transformedDirection * senseRadius, Color.green);
+                //Debug.DrawRay(_transform.position, transformedDirection * senseRadius, Color.green);
             }
         }
 
@@ -169,5 +204,11 @@ public class BoidBehavior : MonoBehaviour
 
         return rayDirections;
     }
-
+    
+    private void UpdateCubeGridPosition()
+    {
+        _gridPosition[0] = (int)Math.Floor(_transform.position.x / senseRadius);
+        _gridPosition[1] = (int)Math.Floor(_transform.position.y / senseRadius);
+        _gridPosition[2] = (int)Math.Floor(_transform.position.z / senseRadius);
+    }
 }

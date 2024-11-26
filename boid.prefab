@@ -97,11 +97,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c2c831cfc1406b46b23cc6c318e66ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cohesionWeight: 2
-  separationWeight: 6
+  cohesionWeight: 1
+  separationWeight: 3
   alignmentWeight: 1
   senseRadius: 1
-  speed: 1
+  speed: 2
+  reflectBySpeedPercentage: 0.05
   collisionWeight: 1
   rayAmount: 20
   rayStart: 0.5
